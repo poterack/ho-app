@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Heckscher-Ohlin: Autarky &amp; Trade</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Georgia, serif;
+    background: #f4f3ef;
+    margin: 0;
+    padding: 26px 20px 48px;
+    color: #1a1a1a;
+  }
+  h2 { text-align: center; font-size: 1.3em; margin: 0 0 7px; letter-spacing: 0.01em; }
+  .subtitle {
+    text-align: center; font-size: 0.84em; color: #666; font-style: italic;
+    margin: 0 auto 18px; max-width: 660px; line-height: 1.55;
+  }
+  .trade-ctrl { text-align: center; margin: 0 0 20px; }
+  .trade-btn {
+    background: #2a6a9e; color: #fff; border: none;
+    padding: 7px 26px; border-radius: 20px;
+    font: 0.93em Georgia, serif; letter-spacing: 0.03em; cursor: pointer;
+  }
+  .trade-btn:hover { opacity: 0.85; }
+  .trade-btn.active { background: #6b3fa0; }
+  .row { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+  .panel {
+    background: #fff; border-radius: 8px; padding: 16px 20px 22px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.11);
+  }
+  .panel-title { text-align: center; font-weight: bold; font-size: 1.0em; margin-bottom: 10px; color: #222; }
+  canvas { display: block; border: 1px solid #ddd; border-radius: 3px; }
+  .ctrl { margin-top: 14px; }
+  .ctrl-sep { margin-top: 10px; }
+  .price-lbl { text-align: center; font-size: 0.93em; margin-bottom: 7px; color: #333; }
+  .price-lbl .val { color: #1b7128; font-weight: bold; font-size: 1.1em; }
+  .lk-lbl { text-align: center; font-size: 0.93em; margin-bottom: 7px; color: #6b3fa0; }
+  .lk-lbl .lkv { color: #6b3fa0; font-weight: bold; font-size: 1.1em; }
+  .sl-row { display: flex; align-items: center; gap: 9px; }
+  .sl-row .edge { font-size: 0.74em; color: #aaa; min-width: 24px; text-align: center; }
+  .sl-row input[type=range] { flex: 1; accent-color: #1b7128; cursor: pointer; }
+  .sl-row input.lk-sl { accent-color: #6b3fa0; }
+  #worldCtrl {
+    display: none; text-align: center; max-width: 440px; margin: 16px auto 0;
+    background: #edf4ff; border: 1px solid #b8d4ee; border-radius: 8px;
+    padding: 12px 28px 14px;
+  }
+  #worldCtrl .price-lbl .val { color: #2a6a9e; }
+  #worldCtrl .sl-row input[type=range] { accent-color: #2a6a9e; }
+  .legend {
+    display: flex; gap: 22px; justify-content: center; margin-top: 22px;
+    flex-wrap: wrap; font-size: 0.8em; color: #444;
+  }
+  .li { display: flex; align-items: center; gap: 7px; }
+  .sw { width: 28px; height: 3px; border-radius: 2px; display: inline-block; }
+  #sdSection { display: none; margin-top: 30px; }
+  .sd-head {
+    text-align: center; font-weight: bold; font-size: 1.05em;
+    color: #2a6a9e; margin-bottom: 14px;
+  }
+  .sd-panel {
+    background: #fff; border-radius: 8px; padding: 14px 18px 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.11);
+  }
+  .sd-title { text-align: center; font-weight: bold; font-size: 0.95em; margin-bottom: 3px; color: #222; }
+  .sd-note { text-align: center; font-size: 0.74em; color: #999; font-style: italic; margin-bottom: 5px; }
+</style>
+</head>
+<body>
+
+<h2>Heckscher-Ohlin Model: Autarky &amp; Trade</h2>
+<p class="subtitle">Adjust L/K to tilt each country's PPF. In autarky, each price slider finds that country's equilibrium. In Trade Mode, a single world price controls both — and the export/import markets show where supply meets demand.</p>
+
+<div class="trade-ctrl">
+  <button id="tradeBtn" class="trade-btn">Enter Trade Mode</button>
+</div>
+
+<div class="row">
+  <div class="panel">
+    <div class="panel-title">Country 1</div>
+    <canvas id="cv1" width="390" height="390"></canvas>
+    <div class="ctrl">
+      <div class="price-lbl">
+        <em>p</em><sub>Wheat</sub> / <em>p</em><sub>Cell phones</sub> = <span class="val" id="v1">0.60</span>
+      </div>
+      <div id="ps1" class="sl-row">
+        <span class="edge">0.3</span>
+        <input type="range" id="sl1p" min="0.3" max="3.0" step="0.05" value="0.60">
+        <span class="edge">3.0</span>
+      </div>
+      <div class="ctrl-sep">
+        <div class="lk-lbl">L / K = <span class="lkv" id="lk1">1.00</span></div>
+        <div class="sl-row">
+          <span class="edge">0.3</span>
+          <input type="range" id="sl1lk" class="lk-sl" min="0.3" max="3.0" step="0.05" value="1.0">
+          <span class="edge">3.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Country 2</div>
+    <canvas id="cv2" width="390" height="390"></canvas>
+    <div class="ctrl">
+      <div class="price-lbl">
+        <em>p</em><sub>Wheat</sub> / <em>p</em><sub>Cell phones</sub> = <span class="val" id="v2">1.50</span>
+      </div>
+      <div id="ps2" class="sl-row">
+        <span class="edge">0.3</span>
+        <input type="range" id="sl2p" min="0.3" max="3.0" step="0.05" value="1.5">
+        <span class="edge">3.0</span>
+      </div>
+      <div class="ctrl-sep">
+        <div class="lk-lbl">L / K = <span class="lkv" id="lk2">1.00</span></div>
+        <div class="sl-row">
+          <span class="edge">0.3</span>
+          <input type="range" id="sl2lk" class="lk-sl" min="0.3" max="3.0" step="0.05" value="1.0">
+          <span class="edge">3.0</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="worldCtrl">
+  <div class="price-lbl">
+    World price: <em>p</em><sub>Wheat</sub> / <em>p</em><sub>Cell phones</sub> = <span class="val" id="vW">1.00</span>
+  </div>
+  <div class="sl-row">
+    <span class="edge">0.3</span>
+    <input type="range" id="slW" min="0.3" max="3.0" step="0.05" value="1.0">
+    <span class="edge">3.0</span>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="li"><span class="sw" style="background:#3660c8"></span>PPF</div>
+  <div class="li"><span class="sw" style="background:#cc2222"></span>Indifference curves</div>
+  <div class="li"><span class="sw" style="background:#1b7128"></span>Price line</div>
+  <div class="li"><svg width="13" height="13" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="5.5" fill="#3660c8" stroke="#fff" stroke-width="1.5"/></svg>Production</div>
+  <div class="li"><svg width="13" height="13" style="flex-shrink:0"><circle cx="6.5" cy="6.5" r="5" fill="#fff" stroke="#cc2222" stroke-width="2.5"/></svg>Consumption</div>
+</div>
+
+<div id="sdSection">
+  <div class="sd-head">Export &amp; Import Markets</div>
+  <div class="row">
+    <div class="sd-panel">
+      <div class="sd-title">Wheat Market</div>
+      <canvas id="sdW" width="350" height="300"></canvas>
+    </div>
+    <div class="sd-panel">
+      <div class="sd-title">Cell Phone Market</div>
+      <div class="sd-note">higher p &rarr; cell phones are cheaper (p = p<sub>W</sub>/p<sub>C</sub>)</div>
+      <canvas id="sdC" width="350" height="300"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ── Main canvas geometry ───────────────────────────────────────────────
+  const CW = 390, CH = 390;
+  const ML = 56, MR = 18, MT = 20, MB = 54;
+  const PW = CW - ML - MR, PH = CH - MT - MB;
+  const XMAX = 1.75, YMAX = 1.75;
+  function sx(w) { return ML + (w / XMAX) * PW; }
+  function sy(c) { return CH - MB - (c / YMAX) * PH; }
+
+  // ── PPF parameters from L/K ────────────────────────────────────────────
+  // Ellipse (W/a)²+(C/b)²=1; a=2/(1+lk), b=2lk/(1+lk); autarky p*=lk
+  function ppfAB(lk) { return { a: 2/(1+lk), b: 2*lk/(1+lk) }; }
+
+  // ── IC family ─────────────────────────────────────────────────────────
+  const IC_SK = [];
+  for (let sk = 0.17; sk <= 1.74; sk += 0.03) IC_SK.push(+sk.toFixed(4));
+  const IC_KS = IC_SK.map(sk => sk * sk);
+  const N_IC  = IC_KS.length;
+
+  function drawICs(ctx, kc) {
+    const sqkc = Math.sqrt(kc);
+    let j = 0, minD = Infinity;
+    IC_SK.forEach((sk, i) => { const d = Math.abs(sk - sqkc); if (d < minD) { minD = d; j = i; } });
+    const order = Array.from({length: N_IC}, (_, i) => i)
+      .sort((a, b) => Math.abs(b - j) - Math.abs(a - j));
+    ctx.save(); ctx.lineJoin = 'round';
+    for (const i of order) {
+      const dist = Math.abs(i - j);
+      ctx.globalAlpha = dist === 0 ? 1.0 : Math.max(0.07, 1.0 / (1 + dist * 0.55));
+      ctx.strokeStyle = '#cc2222';
+      ctx.lineWidth   = dist === 0 ? 2.2 : 0.95;
+      const k = IC_KS[i];
+      ctx.beginPath(); let started = false;
+      for (let n = 1; n <= 1200; n++) {
+        const w = n * XMAX / 1200, c = k / w;
+        if (c > YMAX || c <= 0) { started = false; continue; }
+        const x = sx(w), y = sy(c);
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0; ctx.restore();
+  }
+
+  function drawPPF(ctx, a, b) {
+    ctx.save(); ctx.strokeStyle = '#3660c8'; ctx.lineWidth = 2.6; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let i = 0; i <= 600; i++) {
+      const t = (i / 600) * Math.PI / 2;
+      const w = a * Math.cos(t), c = b * Math.sin(t);
+      if (i === 0) ctx.moveTo(sx(w), sy(c)); else ctx.lineTo(sx(w), sy(c));
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  function drawPriceLine(ctx, p, intcpt) {
+    const pts = [];
+    if (intcpt <= YMAX) pts.push([0, intcpt]);
+    const cR = intcpt - p * XMAX;
+    if (cR >= 0 && cR <= YMAX) pts.push([XMAX, cR]);
+    const wB = intcpt / p;
+    if (wB >= 0 && wB <= XMAX) pts.push([wB, 0]);
+    if (intcpt > YMAX) {
+      const wT = (intcpt - YMAX) / p;
+      if (wT >= 0 && wT <= XMAX) pts.push([wT, YMAX]);
+    }
+    if (pts.length < 2) return;
+    pts.sort((a, b) => a[0] - b[0]);
+    ctx.save(); ctx.strokeStyle = '#1b7128'; ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.moveTo(sx(pts[0][0]), sy(pts[0][1]));
+    ctx.lineTo(sx(pts[pts.length - 1][0]), sy(pts[pts.length - 1][1]));
+    ctx.stroke(); ctx.restore();
+  }
+
+  function drawDropLines(ctx, w, c, col) {
+    if (w > XMAX || c > YMAX || w < 0 || c < 0) return;
+    ctx.save(); ctx.strokeStyle = col || '#aaa'; ctx.lineWidth = 1.0; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(sx(w), sy(c)); ctx.lineTo(sx(w), sy(0));
+    ctx.moveTo(sx(w), sy(c)); ctx.lineTo(sx(0), sy(c));
+    ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+  }
+
+  function drawProdDot(ctx, w, c) {
+    ctx.save(); ctx.beginPath(); ctx.arc(sx(w), sy(c), 5.5, 0, 2*Math.PI);
+    ctx.fillStyle = '#3660c8'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8; ctx.stroke(); ctx.restore();
+  }
+
+  function drawConsDot(ctx, w, c) {
+    if (w > XMAX || c > YMAX || w < 0 || c < 0) return;
+    ctx.save(); ctx.beginPath(); ctx.arc(sx(w), sy(c), 5.5, 0, 2*Math.PI);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = '#cc2222'; ctx.lineWidth = 2.5; ctx.stroke(); ctx.restore();
+  }
+
+  // Curly-bracket trade annotations (trade mode only)
+  function drawTradeBraces(ctx, wp, cp, wc, cc) {
+    if (wc > XMAX || cc > YMAX || wc < 0 || cc < 0) return;
+    const dW = wc - wp;   // >0 = imports wheat
+    const dC = cp - cc;   // >0 = exports cloth
+    ctx.save(); ctx.lineJoin = 'round';
+
+    // ── Wheat: horizontal brace just above x-axis ──────────────────────────
+    if (Math.abs(dW) > 0.015) {
+      const xa = sx(Math.min(wp, wc)), xb = sx(Math.max(wp, wc)), xm = (xa+xb)/2;
+      const col = dW > 0 ? '#b03010' : '#1b7128';
+      const lbl = dW > 0 ? 'wheat imports' : 'wheat exports';
+      const yAx = sy(0), yBr = yAx - 9, yTp = yAx - 16, yLb = yAx - 25;
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(xa, yAx); ctx.lineTo(xa, yBr);
+      ctx.moveTo(xb, yAx); ctx.lineTo(xb, yBr);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(xa, yBr); ctx.lineTo(xm-5, yBr); ctx.lineTo(xm, yTp);
+      ctx.lineTo(xm+5, yBr); ctx.lineTo(xb, yBr);
+      ctx.stroke();
+      ctx.font = 'bold 8.5px Georgia, serif'; ctx.textAlign = 'center';
+      ctx.fillText(lbl, xm, yLb);
+    }
+
+    // ── Cloth: vertical brace just right of y-axis ─────────────────────────
+    if (Math.abs(dC) > 0.015) {
+      const ya = sy(Math.max(cp, cc)), yb = sy(Math.min(cp, cc)), ym = (ya+yb)/2;
+      const col = dC > 0 ? '#1b7128' : '#b03010';
+      const lbl = dC > 0 ? 'phone exports' : 'phone imports';
+      const xAx = sx(0), xBr = xAx + 9, xTp = xAx + 16;
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(xAx, ya); ctx.lineTo(xBr, ya);
+      ctx.moveTo(xAx, yb); ctx.lineTo(xBr, yb);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(xBr, ya); ctx.lineTo(xBr, ym+5); ctx.lineTo(xTp, ym);
+      ctx.lineTo(xBr, ym-5); ctx.lineTo(xBr, yb);
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(xTp + 12, ym); ctx.rotate(-Math.PI/2);
+      ctx.font = 'bold 8.5px Georgia, serif'; ctx.textAlign = 'center';
+      ctx.fillText(lbl, 0, 0);
+      ctx.restore();
+    }
+
+    ctx.restore();
+  }
+
+  function drawAxes(ctx) {
+    ctx.save();
+    ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(ML, CH-MB); ctx.lineTo(ML, MT-8); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ML, CH-MB); ctx.lineTo(CW-MR+8, CH-MB); ctx.stroke();
+    ctx.fillStyle = '#333';
+    ctx.beginPath(); ctx.moveTo(ML,MT-8); ctx.lineTo(ML-5,MT); ctx.lineTo(ML+5,MT); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(CW-MR+8,CH-MB); ctx.lineTo(CW-MR,CH-MB-5); ctx.lineTo(CW-MR,CH-MB+5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.font = '14px Georgia, serif'; ctx.textAlign = 'center';
+    ctx.fillText('Wheat', ML + PW/2, CH - 8);
+    ctx.save(); ctx.translate(13, MT + PH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('Cell phones', 0, 0); ctx.restore();
+    ctx.fillStyle = '#777'; ctx.font = '10px Georgia, serif';
+    ctx.strokeStyle = '#bbb'; ctx.lineWidth = 1;
+    [0.5, 1.0, 1.5].forEach(v => {
+      if (v < XMAX) {
+        const x = sx(v);
+        ctx.beginPath(); ctx.moveTo(x,CH-MB); ctx.lineTo(x,CH-MB+4); ctx.stroke();
+        ctx.textAlign='center'; ctx.fillText(v.toFixed(1), x, CH-MB+14);
+      }
+      if (v < YMAX) {
+        const y = sy(v);
+        ctx.beginPath(); ctx.moveTo(ML,y); ctx.lineTo(ML-4,y); ctx.stroke();
+        ctx.textAlign='right'; ctx.fillText(v.toFixed(1), ML-7, y+3.5);
+      }
+    });
+    ctx.restore();
+  }
+
+  function draw(id, p, lk) {
+    const {a, b} = ppfAB(lk);
+    const ctx = document.getElementById(id).getContext('2d');
+    ctx.clearRect(0, 0, CW, CH);
+    const D  = Math.sqrt(a*a*p*p + b*b);
+    const wp = a*a*p/D, cp = b*b/D;
+    const wc = D/(2*p), cc = D/2;
+    const kc = D*D/(4*p);
+    const conVisible = (wc <= XMAX && cc <= YMAX && wc >= 0 && cc >= 0);
+    drawAxes(ctx);
+    drawICs(ctx, kc);
+    drawPPF(ctx, a, b);
+    drawPriceLine(ctx, p, D);
+    drawDropLines(ctx, wp, cp, '#aaa');
+    if (conVisible) drawDropLines(ctx, wc, cc, '#daa');
+    drawConsDot(ctx, wc, cc);
+    drawProdDot(ctx, wp, cp);
+    if (tradeMode && conVisible) drawTradeBraces(ctx, wp, cp, wc, cc);
+  }
+
+  // ── State ──────────────────────────────────────────────────────────────
+  const state = { 1: {p:0.60, lk:1.0}, 2: {p:1.50, lk:1.0} };
+  let tradeMode = false;
+  let worldP = 1.0;
+
+  function update(n) {
+    const {p, lk} = state[n];
+    document.getElementById('v'  + n).textContent = p.toFixed(2);
+    document.getElementById('lk' + n).textContent = lk.toFixed(2);
+    draw('cv' + n, p, lk);
+  }
+
+  // ── S&D canvas geometry ────────────────────────────────────────────────
+  const SD_W=350, SD_H=300;
+  const SD_ML=54, SD_MR=14, SD_MT=24, SD_MB=46;
+  const SD_PW=SD_W-SD_ML-SD_MR, SD_PH=SD_H-SD_MT-SD_MB;
+  const SD_P0=0.3, SD_P1=3.0;
+
+  function sdPY(p) { return SD_MT + SD_PH*(1-(p-SD_P0)/(SD_P1-SD_P0)); }
+  function sdQX(q, qm) { return SD_ML + (q/qm)*SD_PW; }
+
+  // ── Equilibrium finder ─────────────────────────────────────────────────
+  // Market clears when total net wheat exports = 0
+  function findEq(a1, b1, a2, b2) {
+    function f(p) {
+      const D1=Math.sqrt(a1*a1*p*p+b1*b1), D2=Math.sqrt(a2*a2*p*p+b2*b2);
+      return (a1*a1*p*p-b1*b1)/(2*p*D1) + (a2*a2*p*p-b2*b2)/(2*p*D2);
+    }
+    const fL=f(SD_P0+1e-6), fH=f(SD_P1-1e-6);
+    if (fL*fH > 0) return null;
+    let lo=SD_P0+1e-6, hi=SD_P1-1e-6;
+    for (let i=0; i<52; i++) {
+      const mid=(lo+hi)/2;
+      if (f(mid)*f(lo)<=0) hi=mid; else lo=mid;
+    }
+    return (lo+hi)/2;
+  }
+
+  // ── Draw one S&D graph ─────────────────────────────────────────────────
+  // aE,bE = exporter's (a,b); aI,bI = importer's; nE,nI = "C1"/"C2" labels
+  // good = 'wheat' | 'cloth'
+  function drawSDGraph(id, good, pW, pStar, aE, bE, aI, bI, nE, nI) {
+    const ctx = document.getElementById(id).getContext('2d');
+    ctx.clearRect(0, 0, SD_W, SD_H);
+
+    function sQ(p) {
+      const D=Math.sqrt(aE*aE*p*p+bE*bE);
+      return good==='wheat'
+        ? Math.max(0,(aE*aE*p*p-bE*bE)/(2*p*D))
+        : Math.max(0,(bE*bE-aE*aE*p*p)/(2*D));
+    }
+    function dQ(p) {
+      const D=Math.sqrt(aI*aI*p*p+bI*bI);
+      return good==='wheat'
+        ? Math.max(0,(bI*bI-aI*aI*p*p)/(2*p*D))
+        : Math.max(0,(aI*aI*p*p-bI*bI)/(2*D));
+    }
+
+    // Dynamic x-axis scale
+    let qm=0.04;
+    for (let p=SD_P0; p<=SD_P1+0.001; p+=0.015) qm=Math.max(qm,sQ(p),dQ(p));
+    qm*=1.12;
+
+    // ── Axes ──────────────────────────────────────────────────────────────
+    ctx.save();
+    ctx.strokeStyle='#333'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(SD_ML,SD_MT); ctx.lineTo(SD_ML,SD_MT+SD_PH+5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(SD_ML-4,SD_MT+SD_PH); ctx.lineTo(SD_W-SD_MR,SD_MT+SD_PH); ctx.stroke();
+
+    ctx.fillStyle='#111'; ctx.font='11.5px Georgia,serif'; ctx.textAlign='center';
+    ctx.fillText(good==='wheat'?'Wheat traded':'Cell phones traded', SD_ML+SD_PW/2, SD_H-6);
+    ctx.save(); ctx.translate(12,SD_MT+SD_PH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('pᵂ/pᴄ', 0, 0); ctx.restore();
+
+    ctx.fillStyle='#777'; ctx.font='9.5px Georgia,serif';
+    ctx.strokeStyle='#ccc'; ctx.lineWidth=0.8;
+    [0.5,1.0,1.5,2.0,2.5].forEach(t => {
+      const y=sdPY(t);
+      ctx.beginPath(); ctx.moveTo(SD_ML,y); ctx.lineTo(SD_ML-4,y); ctx.stroke();
+      ctx.textAlign='right'; ctx.fillText(t.toFixed(1), SD_ML-6, y+3.5);
+    });
+    [1,2,3].forEach(i => {
+      const q=qm*i/4, x=sdQX(q,qm);
+      ctx.beginPath(); ctx.moveTo(x,SD_MT+SD_PH); ctx.lineTo(x,SD_MT+SD_PH+4); ctx.stroke();
+      ctx.textAlign='center'; ctx.font='9px Georgia,serif';
+      ctx.fillText(q.toFixed(2), x, SD_MT+SD_PH+16);
+    });
+
+    // ── Equilibrium dashed line ────────────────────────────────────────────
+    if (pStar!==null && pStar>=SD_P0 && pStar<=SD_P1) {
+      ctx.save();
+      ctx.strokeStyle='#bbb'; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+      ctx.beginPath(); ctx.moveTo(SD_ML,sdPY(pStar)); ctx.lineTo(SD_W-SD_MR,sdPY(pStar)); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle='#aaa'; ctx.font='italic 9px Georgia,serif'; ctx.textAlign='left';
+      ctx.fillText('p*='+pStar.toFixed(2), SD_W-SD_MR+2, sdPY(pStar)+3.5);
+      ctx.restore();
+    }
+
+    // ── Current world price line ───────────────────────────────────────────
+    if (pW>=SD_P0 && pW<=SD_P1) {
+      ctx.save();
+      ctx.strokeStyle='#1b7128'; ctx.lineWidth=1.6; ctx.setLineDash([6,3]);
+      ctx.beginPath(); ctx.moveTo(SD_ML,sdPY(pW)); ctx.lineTo(SD_W-SD_MR,sdPY(pW)); ctx.stroke();
+      ctx.setLineDash([]); ctx.restore();
+    }
+
+    // ── Curves ────────────────────────────────────────────────────────────
+    const sCol='#3660c8', dCol='#cc2222';
+    function drawCurve(fn, col) {
+      ctx.strokeStyle=col; ctx.lineWidth=2.2; ctx.lineJoin='round';
+      ctx.beginPath(); let go=false;
+      for (let p=SD_P0; p<=SD_P1+0.001; p+=0.012) {
+        const q=fn(p);
+        if (q<=1e-7) { go=false; continue; }
+        const x=sdQX(q,qm), y=sdPY(p);
+        if (!go) { ctx.moveTo(x,y); go=true; } else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+    drawCurve(sQ, sCol);
+    drawCurve(dQ, dCol);
+
+    // ── Dots at current price ──────────────────────────────────────────────
+    if (pW>=SD_P0 && pW<=SD_P1) {
+      const qs=sQ(pW), qd=dQ(pW);
+      if (qs>1e-7) {
+        ctx.fillStyle=sCol;
+        ctx.beginPath(); ctx.arc(sdQX(qs,qm),sdPY(pW),5.5,0,2*Math.PI); ctx.fill();
+      }
+      if (qd>1e-7) {
+        ctx.fillStyle='#fff'; ctx.strokeStyle=dCol; ctx.lineWidth=2.2;
+        ctx.beginPath(); ctx.arc(sdQX(qd,qm),sdPY(pW),5.5,0,2*Math.PI); ctx.fill(); ctx.stroke();
+      }
+    }
+
+    // ── Equilibrium dot ────────────────────────────────────────────────────
+    if (pStar!==null && pStar>=SD_P0 && pStar<=SD_P1) {
+      const qe=sQ(pStar);
+      if (qe>1e-7) {
+        ctx.fillStyle='#e08020'; ctx.strokeStyle='#fff'; ctx.lineWidth=1.5;
+        ctx.beginPath(); ctx.arc(sdQX(qe,qm),sdPY(pStar),7,0,2*Math.PI); ctx.fill(); ctx.stroke();
+      }
+    }
+
+    // ── Legend ────────────────────────────────────────────────────────────
+    const sLbl=(good==='wheat'?nE+' exports':nE+' exports');
+    const dLbl=(good==='wheat'?nI+' imports':nI+' imports');
+    let lx=SD_ML+6, ly=SD_MT+13;
+    ctx.lineWidth=1.8;
+    ctx.strokeStyle=sCol; ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(lx+18,ly); ctx.stroke();
+    ctx.fillStyle='#444'; ctx.font='9px Georgia,serif'; ctx.textAlign='left';
+    ctx.fillText(sLbl, lx+22, ly+3.5);
+    ly+=13;
+    ctx.strokeStyle=dCol; ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(lx+18,ly); ctx.stroke();
+    ctx.fillText(dLbl, lx+22, ly+3.5);
+    ly+=13;
+    ctx.fillStyle='#e08020'; ctx.beginPath(); ctx.arc(lx+9,ly,4,0,2*Math.PI); ctx.fill();
+    ctx.fillStyle='#444'; ctx.fillText('Equilibrium (p*)', lx+22, ly+3.5);
+
+    ctx.restore();
+  }
+
+  // ── Draw both S&D panels ───────────────────────────────────────────────
+  function drawSD() {
+    const {a:a1,b:b1}=ppfAB(state[1].lk), {a:a2,b:b2}=ppfAB(state[2].lk);
+    const pStar=findEq(a1,b1,a2,b2);
+    const lk1=state[1].lk, lk2=state[2].lk;
+    // Wheat exporter has lower lk (more capital); cloth exporter has higher lk
+    if (lk1<=lk2) {
+      drawSDGraph('sdW','wheat', worldP,pStar, a1,b1,a2,b2,'C1','C2');
+      drawSDGraph('sdC','cloth', worldP,pStar, a2,b2,a1,b1,'C2','C1');
+    } else {
+      drawSDGraph('sdW','wheat', worldP,pStar, a2,b2,a1,b1,'C2','C1');
+      drawSDGraph('sdC','cloth', worldP,pStar, a1,b1,a2,b2,'C1','C2');
+    }
+  }
+
+  // ── Trade mode toggle ──────────────────────────────────────────────────
+  function toggleTrade() {
+    tradeMode=!tradeMode;
+    const btn=document.getElementById('tradeBtn');
+    btn.textContent=tradeMode?'Exit Trade Mode':'Enter Trade Mode';
+    btn.classList.toggle('active', tradeMode);
+
+    document.getElementById('ps1').style.display=tradeMode?'none':'';
+    document.getElementById('ps2').style.display=tradeMode?'none':'';
+    document.getElementById('worldCtrl').style.display=tradeMode?'block':'none';
+    document.getElementById('sdSection').style.display=tradeMode?'block':'none';
+
+    if (tradeMode) {
+      // Set world price to equilibrium
+      const {a:a1,b:b1}=ppfAB(state[1].lk), {a:a2,b:b2}=ppfAB(state[2].lk);
+      const pEq=findEq(a1,b1,a2,b2);
+      worldP=pEq!==null ? Math.min(Math.max(pEq,0.3),3.0) : 1.0;
+      worldP=+worldP.toFixed(2);
+      const slW=document.getElementById('slW');
+      slW.value=worldP;
+      document.getElementById('vW').textContent=worldP.toFixed(2);
+      state[1].p=worldP; state[2].p=worldP;
+      update(1); update(2);
+      drawSD();
+    }
+  }
+
+  // ── Event listeners ────────────────────────────────────────────────────
+  document.getElementById('tradeBtn').addEventListener('click', toggleTrade);
+
+  document.getElementById('slW').addEventListener('input', function() {
+    worldP=parseFloat(this.value);
+    document.getElementById('vW').textContent=worldP.toFixed(2);
+    state[1].p=worldP; state[2].p=worldP;
+    update(1); update(2);
+    drawSD();
+  });
+
+  document.getElementById('sl1p').addEventListener('input', function() {
+    state[1].p=parseFloat(this.value); update(1);
+  });
+  document.getElementById('sl2p').addEventListener('input', function() {
+    state[2].p=parseFloat(this.value); update(2);
+  });
+  document.getElementById('sl1lk').addEventListener('input', function() {
+    state[1].lk=parseFloat(this.value); update(1);
+    if (tradeMode) drawSD();
+  });
+  document.getElementById('sl2lk').addEventListener('input', function() {
+    state[2].lk=parseFloat(this.value); update(2);
+    if (tradeMode) drawSD();
+  });
+
+  update(1); update(2);
+})();
+</script>
+</body>
+</html>
